@@ -1,0 +1,40 @@
+- name: make sure yum is up to date
+  yum:
+    name: '*'
+    state: latest
+  become: yes
+- name: enable epel repos
+  yum:
+    name: epel-release
+    state: present
+  become: yes
+- name: install postgres and company
+  yum:
+    name:
+      - postgresql-server.x86_64
+      - postgresql-contrib.x86_64
+      - postgresql-libs.x86_64
+  become: yes
+- name: initialize database
+  command: /usr/bin/postgresql-setup initdb
+  args:
+    creates: /var/lib/pgsql/data/postgresql.conf
+  become: yes
+- name: copy postgresql security configuration
+  copy:
+    src: files/postgresql__pg_hba.conf
+    dest: /var/lib/pgsql/data/pg_hba.conf
+    owner: postgres
+    group: postgres
+    mode: "u=rwx,g=,o="
+  become: yes
+- name: make sure postgresql is running
+  systemd:
+    state: restarted
+    name: postgresql.service
+  become: yes
+- name: make sure postgresql is enabled
+  systemd:
+    enabled: yes
+    name: postgresql.service
+  become: yes
